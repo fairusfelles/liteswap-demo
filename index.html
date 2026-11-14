@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>LiteSwap — Testnet prices. Mainnet parity.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#07090D; --panel:#0E1219; --panel2:#131926; --line:#1E2635; --line2:#2A3548;
+    --txt:#EDF1F5; --mut:#8A94A6; --dim:#5B6577;
+    --acc:#02C8DC; --acc2:#0AA2B5; --good:#2FD08C; --bad:#FF5C7A; --warn:#FFB648;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{background:var(--bg);color:var(--txt);font-family:'Manrope',system-ui,sans-serif}
+  body{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:0 14px 40px}
+  header{width:100%;max-width:460px;display:flex;align-items:center;gap:10px;padding:16px 2px 6px}
+  .logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:19px;letter-spacing:-.3px}
+  .lmark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;color:#03222A}
+  .lmark svg{width:17px;height:17px}
+  .demotag{font-size:9.5px;font-weight:800;letter-spacing:1.2px;color:#0A0E14;background:var(--warn);border-radius:5px;padding:2.5px 6px;margin-left:2px}
+  header .sp{flex:1}
+  .netpill{font-size:11px;font-weight:700;color:var(--mut);border:1px solid var(--line2);border-radius:99px;padding:6px 10px;display:flex;align-items:center;gap:6px}
+  .netpill i{width:7px;height:7px;border-radius:50%;background:var(--good);display:inline-block;animation:blk 1.6s infinite}
+  @keyframes blk{0%,100%{opacity:1}50%{opacity:.25}}
+  .cbtn{background:var(--acc);color:#03222A;border:0;font-family:inherit;font-weight:800;font-size:13px;border-radius:11px;padding:9px 14px;cursor:pointer}
+  .cbtn:active{transform:scale(.97)}
+  .tagline{width:100%;max-width:460px;color:var(--mut);font-size:13px;padding:2px 2px 14px}
+  .tagline b{color:var(--txt)}
+  .card{width:100%;max-width:460px;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:16px}
+  .refbox{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:14px}
+  .refrow{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--mut);padding:2.5px 0}
+  .refrow b{color:var(--txt);font-size:13px;font-variant-numeric:tabular-nums}
+  .refrow .big{font-size:16px;font-weight:800}
+  .dev-ok{color:var(--good);font-weight:800}
+  .dev-warn{color:var(--warn);font-weight:800}
+  .keeper{display:flex;align-items:center;gap:7px;margin-top:8px;padding-top:9px;border-top:1px dashed var(--line2);font-size:11.5px;color:var(--mut)}
+  .keeper i{width:7px;height:7px;border-radius:50%;background:var(--good);animation:blk 1.2s infinite;flex:none}
+  .keeper b{color:var(--good)}
+  .tabs{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:3px;margin-bottom:14px}
+  .tabs button{flex:1;background:transparent;border:0;color:var(--mut);font-family:inherit;font-weight:800;font-size:13.5px;padding:8px 0;border-radius:9px;cursor:pointer}
+  .tabs button.on{background:#1C2536;color:var(--txt)}
+  .tbox{background:var(--panel2);border:1px solid var(--line);border-radius:16px;padding:13px 14px}
+  .tbox label{font-size:11.5px;color:var(--dim);font-weight:700;letter-spacing:.4px}
+  .trow{display:flex;align-items:center;gap:10px;margin-top:6px}
+  .trow input{flex:1;background:transparent;border:0;outline:0;color:var(--txt);font-family:inherit;font-size:25px;font-weight:800;width:100%;min-width:0;font-variant-numeric:tabular-nums}
+  .trow input::placeholder{color:#39435A}
+  .tsel{display:flex;align-items:center;gap:7px;background:#1A2233;border:1px solid var(--line2);border-radius:99px;padding:6px 11px 6px 7px;font-weight:800;font-size:14.5px;cursor:pointer;flex:none}
+  .tsel:active{transform:scale(.97)}
+  .tic{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;flex:none}
+  .bal{font-size:11.5px;color:var(--dim);margin-top:7px;display:flex;justify-content:space-between}
+  .bal button{background:none;border:0;color:var(--acc);font-family:inherit;font-weight:800;font-size:11.5px;cursor:pointer;padding:0}
+  .flip{display:flex;justify-content:center;margin:-7px 0;position:relative;z-index:2}
+  .flip button{width:34px;height:34px;border-radius:11px;background:#1C2536;border:1px solid var(--line2);color:var(--acc);cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .flip button:active{transform:scale(.93)}
+  .meta{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);padding:11px 2px 3px;font-variant-numeric:tabular-nums}
+  .meta b{color:var(--txt)}
+  .bigbtn{width:100%;margin-top:12px;background:var(--acc);color:#03222A;border:0;font-family:inherit;font-weight:800;font-size:16px;border-radius:15px;padding:15px 0;cursor:pointer}
+  .bigbtn:active{transform:scale(.985)}
+  .bigbtn:disabled{background:#1C2536;color:var(--dim);cursor:default}
+  .ghostbtn{width:100%;margin-top:9px;background:transparent;color:var(--acc);border:1px solid var(--line2);font-family:inherit;font-weight:800;font-size:13.5px;border-radius:13px;padding:11px 0;cursor:pointer}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%;max-width:460px;margin-top:12px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:11px 13px}
+  .stat label{font-size:10.5px;color:var(--dim);font-weight:700;letter-spacing:.6px;text-transform:uppercase}
+  .stat div{font-size:16.5px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums}
+  .stat small{font-size:11px;color:var(--mut);font-weight:600}
+  footer{width:100%;max-width:460px;color:var(--dim);font-size:11.5px;line-height:1.65;padding:16px 2px 0;text-align:center}
+  footer b{color:var(--mut)}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:#16202F;border:1px solid var(--line2);color:var(--txt);font-size:13px;font-weight:700;border-radius:12px;padding:11px 16px;opacity:0;pointer-events:none;transition:.25s;max-width:92vw;text-align:center;z-index:50}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .hide{display:none!important}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="lmark"><svg viewBox="0 0 24 24" fill="none"><path d="M7 4v13.2c0 1 .8 1.8 1.8 1.8H19" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/></svg></span>
+    LiteSwap <span class="demotag">DEMO</span>
+  </div>
+  <div class="sp"></div>
+  <div class="netpill"><i></i>LiteForge · 4441</div>
+  <button class="cbtn" id="connectBtn" onclick="connect()">Connect</button>
+</header>
+
+<div class="tagline">Testnet prices. <b>Mainnet parity.</b> The LiteForge DEX whose prices mirror the real LTC market — live.</div>
+
+<div class="card">
+  <div class="refbox">
+    <div class="refrow"><span>Mainnet reference · LTC/USDT (Kraken)</span><b class="big" id="refPrice">…</b></div>
+    <div class="refrow"><span>LiteSwap pool price · zkLTC</span><b id="poolPrice">…</b></div>
+    <div class="refrow"><span>Deviation</span><b id="devVal" class="dev-ok">…</b></div>
+    <div class="keeper"><i></i><span><b>Keeper ACTIVE</b> — pool is continuously re-aligned to the mainnet price. <span id="feedMode">Feed: live.</span></span></div>
+  </div>
+
+  <div class="tabs">
+    <button id="tabSwap" class="on" onclick="showTab('swap')">Swap</button>
+    <button id="tabLiq" onclick="showTab('liq')">Liquidity</button>
+  </div>
+
+  <!-- SWAP -->
+  <div id="paneSwap">
+    <div class="tbox">
+      <label>YOU PAY</label>
+      <div class="trow">
+        <input id="inAmt" type="text" inputmode="decimal" placeholder="0.0" oninput="onIn()">
+        <div class="tsel" onclick="flipDir()"><span class="tic" id="inIc" style="background:#345D9D">Ł</span><span id="inSym">zkLTC</span></div>
+      </div>
+      <div class="bal"><span id="inBal">Balance: 100.00</span><button onclick="setMax()">MAX</button></div>
+    </div>
+    <div class="flip"><button onclick="flipDir()" aria-label="Flip direction"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M7 4v13M7 17l-3-3M7 4l3 3M17 20V7M17 7l3 3M17 20l-3-3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" transform="rotate(90 12 12)"/></svg></button></div>
+    <div class="tbox">
+      <label>YOU RECEIVE</label>
+      <div class="trow">
+        <input id="outAmt" type="text" placeholder="0.0" readonly>
+        <div class="tsel" onclick="flipDir()"><span class="tic" id="outIc" style="background:#1E9E6A">$</span><span id="outSym">LUSD</span></div>
+      </div>
+      <div class="bal"><span id="outBal">Balance: 1,000.00</span><span id="rateLine">—</span></div>
+    </div>
+    <div class="meta"><span>Price impact</span><b id="impact">—</b></div>
+    <div class="meta"><span>Fee (0.3%)</span><b id="feeLine">—</b></div>
+    <button class="bigbtn" id="swapBtn" onclick="doSwap()">Swap</button>
+    <button class="ghostbtn" onclick="faucet()">+ Get test tokens (demo faucet)</button>
+  </div>
+
+  <!-- LIQUIDITY -->
+  <div id="paneLiq" class="hide">
+    <div class="tbox">
+      <label>DEPOSIT zkLTC</label>
+      <div class="trow">
+        <input id="liqA" type="text" inputmode="decimal" placeholder="0.0" oninput="onLiq()">
+        <div class="tsel"><span class="tic" style="background:#345D9D">Ł</span><span>zkLTC</span></div>
+      </div>
+      <div class="bal"><span id="liqABal">Balance: 100.00</span><span></span></div>
+    </div>
+    <div style="height:9px"></div>
+    <div class="tbox">
+      <label>DEPOSIT LUSD (auto, at pool price)</label>
+      <div class="trow">
+        <input id="liqB" type="text" placeholder="0.0" readonly>
+        <div class="tsel"><span class="tic" style="background:#1E9E6A">$</span><span>LUSD</span></div>
+      </div>
+      <div class="bal"><span id="liqBBal">Balance: 1,000.00</span><span></span></div>
+    </div>
+    <div class="meta"><span>Your pool share after deposit</span><b id="shareLine">—</b></div>
+    <button class="bigbtn" onclick="doAddLiq()">Add liquidity</button>
+    <button class="ghostbtn" onclick="faucet()">+ Get test tokens (demo faucet)</button>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat"><label>Pool reserves</label><div id="stRes">…</div><small>zkLTC / LUSD in the pair</small></div>
+  <div class="stat"><label>Total value (at ref price)</label><div id="stTvl">…</div><small>both sides of the pool</small></div>
+  <div class="stat"><label>Swaps executed</label><div id="stSwaps">0</div><small>this demo session</small></div>
+  <div class="stat"><label>Keeper corrections</label><div id="stCorr">0</div><small>re-alignments to mainnet</small></div>
+</div>
+
+<footer>
+  <b>LiteSwap — concept demo.</b> Runs fully in your browser: real AMM maths (x·y=k, 0.3% fee) against a simulated local pool; the reference price is the live mainnet LTC/USDT rate. No contracts are deployed yet and no wallet is ever asked for a signature. On LiteForge, the deployed version reads the same reference and the keeper keeps the on-chain pool at parity.
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+// ---------- state ----------
+var ref = 43.92;              // mainnet LTC/USDT reference (fallback start)
+var feedLive = false;
+var R = { zk: 5000, usd: 0 }; // pool reserves; usd seeded from ref at init
+var bal = { zk: 100, usd: 1000 };
+var lpUser = 0, lpTotal = 0;
+var swaps = 0, corrections = 0;
+var dir = 1;                  // 1 = pay zkLTC, receive LUSD ; -1 = reverse
+var FEE = 0.003;
+
+function fmt(n, d){ return n.toLocaleString('en-US',{minimumFractionDigits:d==null?2:d, maximumFractionDigits:d==null?2:d}); }
+function poolPrice(){ return R.usd / R.zk; }                 // LUSD per zkLTC
+function amountOut(ain, rin, rout){ var a = ain*(1-FEE); return (a*rout)/(rin+a); }
+function toast(msg){ var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(function(){t.classList.remove('show')},2600); }
+
+// ---------- reference feed (Kraken public ticker, CORS-enabled) ----------
+function fetchRef(){
+  fetch('https://api.kraken.com/0/public/Ticker?pair=LTCUSDT')
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      var k = j && j.result && (j.result.LTCUSDT || j.result.XLTCUSDT);
+      if(k && k.c && k.c[0]){ ref = parseFloat(k.c[0]); feedLive = true; }
+      render();
+    })
+    .catch(function(){ feedLive = false; render(); });
+}
+// fallback: gentle random walk so the demo still breathes offline
+setInterval(function(){ if(!feedLive){ ref = Math.max(30, ref + (Math.random()-0.5)*0.14); render(); } }, 5000);
+fetchRef(); setInterval(fetchRef, 15000);
+
+// ---------- keeper simulation: arbitrage the pool back toward ref ----------
+function keeper(){
+  var p = poolPrice(), dev = (p - ref)/ref;
+  if(Math.abs(dev) > 0.0025){
+    // arbitrageur trades against the pool to close ~60% of the gap
+    if(dev > 0){ // zkLTC too expensive in pool -> sell zkLTC into pool
+      var ain = R.zk * Math.min(0.12, Math.abs(dev)*1.4);
+      var out = amountOut(ain, R.zk, R.usd);
+      R.zk += ain; R.usd -= out;
+    } else {     // zkLTC too cheap -> buy zkLTC with LUSD
+      var ain2 = R.usd * Math.min(0.12, Math.abs(dev)*1.4);
+      var out2 = amountOut(ain2, R.usd, R.zk);
+      R.usd += ain2; R.zk -= out2;
+    }
+    corrections++;
+  }
+  render();
+}
+setInterval(keeper, 4000);
+
+// ---------- UI ----------
+function sym(side){ // side: 'in' | 'out'
+  var isZk = (side==='in') === (dir===1);
+  return isZk ? {s:'zkLTC', bg:'#345D9D', g:'Ł', key:'zk'} : {s:'LUSD', bg:'#1E9E6A', g:'$', key:'usd'};
+}
+function render(){
+  document.getElementById('refPrice').textContent = '$' + fmt(ref);
+  document.getElementById('poolPrice').textContent = '$' + fmt(poolPrice());
+  var dev = (poolPrice()-ref)/ref*100;
+  var dv = document.getElementById('devVal');
+  dv.textContent = (dev>=0?'+':'') + dev.toFixed(2) + '%';
+  dv.className = Math.abs(dev) <= 0.5 ? 'dev-ok' : 'dev-warn';
+  document.getElementById('feedMode').textContent = feedLive ? 'Feed: live.' : 'Feed: offline — simulated walk.';
+  var si = sym('in'), so = sym('out');
+  document.getElementById('inSym').textContent = si.s;
+  document.getElementById('outSym').textContent = so.s;
+  var ii = document.getElementById('inIc'), oi = document.getElementById('outIc');
+  ii.style.background = si.bg; ii.textContent = si.g;
+  oi.style.background = so.bg; oi.textContent = so.g;
+  document.getElementById('inBal').textContent = 'Balance: ' + fmt(bal[si.key]);
+  document.getElementById('outBal').textContent = 'Balance: ' + fmt(bal[so.key]);
+  document.getElementById('liqABal').textContent = 'Balance: ' + fmt(bal.zk);
+  document.getElementById('liqBBal').textContent = 'Balance: ' + fmt(bal.usd);
+  document.getElementById('rateLine').textContent = dir===1 ? ('1 zkLTC ≈ $' + fmt(poolPrice())) : ('1 LUSD ≈ ' + fmt(1/poolPrice(),4) + ' zkLTC');
+  document.getElementById('stRes').textContent = fmt(R.zk,0) + ' / ' + fmt(R.usd,0);
+  document.getElementById('stTvl').textContent = '$' + fmt(R.zk*ref + R.usd, 0);
+  document.getElementById('stSwaps').textContent = swaps;
+  document.getElementById('stCorr').textContent = corrections;
+  onIn(); onLiq();
+}
+function parseAmt(id){ var v = parseFloat((document.getElementById(id).value||'').replace(',','.')); return isFinite(v) && v>0 ? v : 0; }
+function onIn(){
+  var ain = parseAmt('inAmt');
+  var si = sym('in');
+  var rin = si.key==='zk' ? R.zk : R.usd, rout = si.key==='zk' ? R.usd : R.zk;
+  var out = ain>0 ? amountOut(ain, rin, rout) : 0;
+  document.getElementById('outAmt').value = ain>0 ? fmt(out, out<1?4:2) : '';
+  var mid = si.key==='zk' ? ain*poolPrice() : ain/poolPrice();
+  var imp = mid>0 ? Math.max(0,(1 - (si.key==='zk'? out : out) / (mid||1)) * 100) : 0;
+  document.getElementById('impact').textContent = ain>0 ? imp.toFixed(2)+'%' : '—';
+  document.getElementById('feeLine').textContent = ain>0 ? fmt(ain*FEE,4)+' '+si.s : '—';
+  var btn = document.getElementById('swapBtn');
+  if(ain<=0){ btn.disabled = true; btn.textContent = 'Enter an amount'; }
+  else if(ain > bal[si.key]){ btn.disabled = true; btn.textContent = 'Insufficient ' + si.s + ' balance'; }
+  else { btn.disabled = false; btn.textContent = 'Swap'; }
+}
+function onLiq(){
+  var a = parseAmt('liqA');
+  document.getElementById('liqB').value = a>0 ? fmt(a*poolPrice()) : '';
+  var share = a>0 ? (a/(R.zk+a))*100 : 0;
+  document.getElementById('shareLine').textContent = a>0 ? share.toFixed(2)+'%' : '—';
+}
+function setMax(){ var si = sym('in'); document.getElementById('inAmt').value = bal[si.key]; onIn(); }
+function flipDir(){ dir *= -1; document.getElementById('inAmt').value=''; render(); }
+function showTab(t){
+  document.getElementById('tabSwap').className = t==='swap' ? 'on' : '';
+  document.getElementById('tabLiq').className = t==='liq' ? 'on' : '';
+  document.getElementById('paneSwap').className = t==='swap' ? '' : 'hide';
+  document.getElementById('paneLiq').className = t==='liq' ? '' : 'hide';
+}
+function doSwap(){
+  var ain = parseAmt('inAmt'), si = sym('in'), so = sym('out');
+  if(ain<=0 || ain>bal[si.key]) return;
+  var rin = si.key==='zk' ? R.zk : R.usd, rout = si.key==='zk' ? R.usd : R.zk;
+  var out = amountOut(ain, rin, rout);
+  if(si.key==='zk'){ R.zk += ain; R.usd -= out; } else { R.usd += ain; R.zk -= out; }
+  bal[si.key] -= ain; bal[so.key] += out;
+  swaps++;
+  document.getElementById('inAmt').value = '';
+  toast('Swapped ' + fmt(ain) + ' ' + si.s + ' → ' + fmt(out, out<1?4:2) + ' ' + so.s + ' · demo tx confirmed');
+  render();
+}
+function doAddLiq(){
+  var a = parseAmt('liqA'), b = a*poolPrice();
+  if(a<=0) return;
+  if(a>bal.zk){ toast('Insufficient zkLTC balance'); return; }
+  if(b>bal.usd){ toast('Insufficient LUSD balance'); return; }
+  bal.zk -= a; bal.usd -= b;
+  var minted = lpTotal===0 ? Math.sqrt(a*b) : Math.min(a/R.zk, b/R.usd)*lpTotal;
+  R.zk += a; R.usd += b; lpUser += minted; lpTotal += minted;
+  document.getElementById('liqA').value = '';
+  toast('Liquidity added · your pool share: ' + (lpUser/lpTotal*100).toFixed(2) + '%');
+  render();
+}
+function faucet(){ bal.zk += 50; bal.usd += 500; toast('+50 zkLTC and +500 LUSD test tokens (demo)'); render(); }
+function connect(){
+  var b = document.getElementById('connectBtn');
+  if(window.ethereum){
+    window.ethereum.request({method:'eth_requestAccounts'}).then(function(a){
+      if(a && a[0]){ b.textContent = a[0].slice(0,6)+'…'+a[0].slice(-4); toast('Wallet connected (demo still runs locally)'); }
+    }).catch(function(){ toast('Connection rejected'); });
+  } else {
+    b.textContent = '0x2e95…1018';
+    toast('Demo mode — no wallet extension found, showing a sample address');
+  }
+}
+// seed LUSD side from the fallback ref so first paint is sane; re-seeded proportionally if ref moves a lot pre-interaction
+R.usd = R.zk * ref;
+render();
+</script>
+</body>
+</html>
