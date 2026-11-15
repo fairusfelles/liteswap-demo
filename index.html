@@ -4,183 +4,430 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>LiteSwap — Testnet prices. Mainnet parity.</title>
+<!-- LiteSwap v3 · full-stack overhaul · marker: LSV3-7F2A -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/ola@1.2.2/ola.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/konva@10.9.1/konva.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/two.js@0.8.24/build/two.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lottie-web@5.13.0/build/player/lottie.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/proton-engine@7.1.5/build/proton.min.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js",
+    "motion": "https://cdn.jsdelivr.net/npm/motion@14.14.0/dist/es/index.mjs",
+    "framer-motion/dom": "https://cdn.jsdelivr.net/npm/framer-motion@14.14.0/dist/es/dom.mjs",
+    "motion-dom": "https://cdn.jsdelivr.net/npm/motion-dom@14.14.0/dist/es/index.mjs",
+    "motion-utils": "https://cdn.jsdelivr.net/npm/motion-utils@14.7.0/dist/es/index.mjs",
+    "animejs": "https://cdn.jsdelivr.net/npm/animejs@4.5.0/dist/modules/index.js",
+    "gifenc": "https://cdn.jsdelivr.net/npm/gifenc@1.0.3/dist/gifenc.esm.js"
+  }
+}
+</script>
 <style>
   :root{
-    --bg:#090D14; --panel:#0C1320; --panel2:#101A2C; --line:#1C2A42; --line2:#2A3D5F;
+    --bg:#060B15; --panel:#0C1320; --panel2:#101A2C;
+    --line:#1C2A42; --line2:#2A3D5F;
     --txt:#EDF1F5; --mut:#8A94A6; --dim:#5B6577;
-    --acc:#4C8DFF; --acc2:#2F6BDD; --good:#2FD08C; --bad:#FF5C7A; --warn:#FFB648;
+    --acc:#4C8DFF; --acc-hi:#5B9BFF; --acc-lo:#2F6BDD; --ltc:#345D9D;
+    --good:#2FD08C; --bad:#FF5C7A; --warn:#FFB648;
+    --glass:linear-gradient(160deg, rgba(120,165,255,.07), rgba(120,165,255,.02) 55%, rgba(10,18,32,.25));
+    --shadow:0 18px 44px rgba(2,6,16,.5), 0 2px 8px rgba(2,6,16,.4);
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{background:var(--bg);color:var(--txt);font-family:'Plus Jakarta Sans',system-ui,sans-serif}
-  body{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:0 14px 40px}
-  header{width:100%;max-width:460px;display:flex;align-items:center;gap:10px;padding:16px 2px 6px}
+  html{scrollbar-color:var(--line2) var(--bg)}
+  body{
+    background:
+      radial-gradient(900px 480px at 85% -120px, rgba(76,141,255,.13), transparent 60%),
+      radial-gradient(700px 420px at -10% 30%, rgba(47,107,221,.10), transparent 60%),
+      var(--bg);
+    color:var(--txt);font-family:'Plus Jakarta Sans',system-ui,sans-serif;
+    min-height:100vh;display:flex;flex-direction:column;
+  }
+  ::-webkit-scrollbar{width:9px;height:9px}
+  ::-webkit-scrollbar-thumb{background:var(--line2);border-radius:99px;border:2px solid var(--bg)}
+  ::-webkit-scrollbar-track{background:transparent}
+  button{font-family:inherit}
+  button:focus-visible, input:focus-visible, [tabindex]:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:8px}
+
+  /* ---------- top bar ---------- */
+  .topbar{position:sticky;top:0;z-index:40;background:rgba(6,11,21,.74);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid rgba(42,61,95,.55)}
+  .topbar-in{max-width:1120px;margin:0 auto;display:flex;align-items:center;gap:10px;padding:12px 16px}
   .logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:19px;letter-spacing:-.3px}
-  .lmark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;color:#FFFFFF}
+  .lmark{width:31px;height:31px;border-radius:9px;background:linear-gradient(135deg,var(--acc-hi),var(--acc-lo));display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 4px 14px rgba(76,141,255,.35)}
   .lmark svg{width:17px;height:17px}
   .demotag{font-size:9.5px;font-weight:800;letter-spacing:1.2px;color:#0A0E14;background:var(--warn);border-radius:5px;padding:2.5px 6px;margin-left:2px}
-  header .sp{flex:1}
-  .netpill{font-size:11px;font-weight:700;color:var(--mut);border:1px solid var(--line2);border-radius:99px;padding:6px 10px;display:flex;align-items:center;gap:6px}
+  .topbar .sp{flex:1}
+  .netpill{font-size:11px;font-weight:700;color:var(--mut);border:1px solid var(--line2);border-radius:99px;padding:6px 10px;display:flex;align-items:center;gap:6px;white-space:nowrap}
   .netpill i{width:7px;height:7px;border-radius:50%;background:var(--good);display:inline-block;animation:blk 1.6s infinite}
   @keyframes blk{0%,100%{opacity:1}50%{opacity:.25}}
-  .cbtn{background:linear-gradient(135deg,#5B9BFF,var(--acc2));color:#FFFFFF;border:0;font-family:inherit;font-weight:800;font-size:13px;border-radius:11px;padding:9px 14px;cursor:pointer}
+  .cbtn{background:linear-gradient(135deg,var(--acc-hi),var(--acc-lo));color:#fff;border:0;font-weight:800;font-size:13px;border-radius:11px;padding:9px 14px;cursor:pointer;box-shadow:0 6px 18px rgba(47,107,221,.35)}
   .cbtn:active{transform:scale(.97)}
-  .tagline{width:100%;max-width:460px;color:var(--mut);font-size:13px;padding:2px 2px 14px}
-  .tagline b{color:var(--txt)}
-  .card{width:100%;max-width:460px;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:16px}
-  .refbox{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:14px}
-  .refrow{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--mut);padding:2.5px 0}
-  .refrow b{color:var(--txt);font-size:13px;font-variant-numeric:tabular-nums}
-  .refrow .big{font-size:16px;font-weight:800}
-  .dev-ok{color:var(--good);font-weight:800}
-  .dev-warn{color:var(--warn);font-weight:800}
-  .keeper{display:flex;align-items:center;gap:7px;margin-top:8px;padding-top:9px;border-top:1px dashed var(--line2);font-size:11.5px;color:var(--mut)}
+
+  /* ---------- hero ---------- */
+  .hero{position:relative;overflow:hidden;border-bottom:1px solid rgba(42,61,95,.5);background:linear-gradient(180deg,#0A1526 0%,#081020 58%,#060B15 100%)}
+  #bgParticles{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
+  .hero-in{position:relative;z-index:2;max-width:1120px;margin:0 auto;padding:42px 20px 38px;display:flex;align-items:center;gap:30px}
+  .hero-copy{flex:1;min-width:0}
+  .hero-badge{display:inline-flex;align-items:center;gap:7px;font-size:10.5px;font-weight:800;letter-spacing:1.4px;color:#BFD6FF;border:1px solid rgba(92,155,255,.45);background:rgba(47,107,221,.16);border-radius:99px;padding:5px 11px;margin-bottom:16px}
+  .hero-badge i{width:6px;height:6px;border-radius:50%;background:var(--acc-hi);animation:blk 1.8s infinite}
+  h1{font-size:clamp(31px,5.6vw,54px);font-weight:800;letter-spacing:-1.2px;line-height:1.04}
+  h1 .grad{background:linear-gradient(92deg,var(--acc-hi) 10%,#9CC2FF 55%,var(--acc) 95%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero-sub{margin-top:14px;color:var(--mut);font-size:clamp(13.5px,2.4vw,16px);line-height:1.6;max-width:560px}
+  .hero-sub b{color:var(--txt)}
+  .hero-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+  .chip{font-size:11.5px;font-weight:700;color:#C7D6F2;border:1px solid rgba(42,61,95,.9);background:rgba(12,19,32,.55);border-radius:99px;padding:6px 12px;display:inline-flex;gap:6px;align-items:center}
+  .chip b{color:#fff;font-variant-numeric:tabular-nums}
+  .coin-wrap{flex:none;width:150px;height:150px;position:relative}
+  #coinCanvas{width:150px;height:150px;display:block}
+  .coin-fallback{position:absolute;inset:0;display:none;align-items:center;justify-content:center}
+  .coin-fallback span{width:104px;height:104px;border-radius:50%;background:radial-gradient(circle at 32% 28%, #6FA8FF, var(--acc-lo) 62%, #1D4FA1);display:flex;align-items:center;justify-content:center;font-size:52px;font-weight:800;color:#EAF2FF;box-shadow:0 16px 36px rgba(47,107,221,.45), inset 0 2px 6px rgba(255,255,255,.35)}
+  @media(max-width:560px){ .coin-wrap{width:104px;height:104px} #coinCanvas{width:104px;height:104px} .coin-fallback span{width:76px;height:76px;font-size:38px} .hero-in{padding:32px 16px 30px;gap:16px} }
+
+  /* ---------- layout & cards ---------- */
+  .layout{width:100%;max-width:1120px;margin:24px auto 0;padding:0 16px;display:grid;grid-template-columns:1fr;gap:16px;align-items:start}
+  @media(min-width:1024px){ .layout{grid-template-columns:472px 1fr} }
+  .side-col{display:grid;gap:16px;min-width:0}
+  .card{background:var(--glass), var(--panel);border:1px solid rgba(64,96,152,.4);border-radius:22px;padding:18px;box-shadow:var(--shadow);position:relative}
+  .card h3{font-size:12px;font-weight:800;letter-spacing:1.1px;text-transform:uppercase;color:var(--mut);display:flex;align-items:center;gap:8px}
+  .card h3 .dot{width:7px;height:7px;border-radius:50%;background:var(--acc);box-shadow:0 0 10px rgba(76,141,255,.8)}
+
+  /* ---------- price panel ---------- */
+  .refbox{background:rgba(10,17,30,.55);border:1px solid var(--line);border-radius:16px;padding:13px 15px;margin-bottom:14px}
+  .refrow{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:12px;color:var(--mut);padding:3px 0}
+  .refrow b{color:var(--txt);font-size:13.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .refrow .big{font-size:17px;font-weight:800}
+  .dev-ok{color:var(--good)!important;font-weight:800}
+  .dev-warn{color:var(--warn)!important;font-weight:800}
+  .keeper{display:flex;align-items:center;gap:7px;margin-top:9px;padding-top:10px;border-top:1px dashed var(--line2);font-size:11.5px;color:var(--mut);line-height:1.5}
   .keeper i{width:7px;height:7px;border-radius:50%;background:var(--good);animation:blk 1.2s infinite;flex:none}
   .keeper b{color:var(--good)}
-  .tabs{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:3px;margin-bottom:14px}
-  .tabs button{flex:1;background:transparent;border:0;color:var(--mut);font-family:inherit;font-weight:800;font-size:13.5px;padding:8px 0;border-radius:9px;cursor:pointer}
-  .tabs button.on{background:#1B2A45;color:var(--txt)}
-  .tbox{background:var(--panel2);border:1px solid var(--line);border-radius:16px;padding:13px 14px}
-  .tbox label{font-size:11.5px;color:var(--dim);font-weight:700;letter-spacing:.4px}
+
+  /* ---------- tabs & swap ---------- */
+  .tabs{display:flex;background:rgba(10,17,30,.6);border:1px solid var(--line);border-radius:13px;padding:3px;margin-bottom:14px}
+  .tabs button{flex:1;background:transparent;border:0;color:var(--mut);font-weight:800;font-size:13.5px;padding:9px 0;border-radius:10px;cursor:pointer;transition:background .2s,color .2s}
+  .tabs button.on{background:linear-gradient(160deg,#22365C,#1B2A45);color:var(--txt);box-shadow:inset 0 1px 0 rgba(160,195,255,.15)}
+  .tbox{background:rgba(13,22,38,.72);border:1px solid var(--line);border-radius:16px;padding:13px 14px;transition:border-color .2s}
+  .tbox:focus-within{border-color:var(--acc)}
+  .tbox label{font-size:11px;color:var(--dim);font-weight:700;letter-spacing:.6px}
   .trow{display:flex;align-items:center;gap:10px;margin-top:6px}
-  .trow input{flex:1;background:transparent;border:0;outline:0;color:var(--txt);font-family:inherit;font-size:25px;font-weight:800;width:100%;min-width:0;font-variant-numeric:tabular-nums}
+  .trow input{flex:1;background:transparent;border:0;outline:0;color:var(--txt);font-family:inherit;font-size:26px;font-weight:800;width:100%;min-width:0;font-variant-numeric:tabular-nums}
   .trow input::placeholder{color:#3D4F73}
-  .tsel{display:flex;align-items:center;gap:7px;background:#16233C;border:1px solid var(--line2);border-radius:99px;padding:6px 11px 6px 7px;font-weight:800;font-size:14.5px;cursor:pointer;flex:none}
+  .tsel{display:flex;align-items:center;gap:7px;background:#16233C;border:1px solid var(--line2);border-radius:99px;padding:6px 11px 6px 7px;font-weight:800;font-size:14.5px;cursor:pointer;flex:none;user-select:none}
   .tsel:active{transform:scale(.97)}
-  .tic{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;flex:none}
-  .bal{font-size:11.5px;color:var(--dim);margin-top:7px;display:flex;justify-content:space-between}
-  .bal button{background:none;border:0;color:var(--acc);font-family:inherit;font-weight:800;font-size:11.5px;cursor:pointer;padding:0}
+  .tic{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:800;color:#fff;flex:none}
+  .bal{font-size:11.5px;color:var(--dim);margin-top:7px;display:flex;justify-content:space-between;gap:8px;font-variant-numeric:tabular-nums}
+  .bal button{background:none;border:0;color:var(--acc);font-weight:800;font-size:11.5px;cursor:pointer;padding:0}
   .flip{display:flex;justify-content:center;margin:-7px 0;position:relative;z-index:2}
-  .flip button{width:34px;height:34px;border-radius:11px;background:#1B2A45;border:1px solid var(--line2);color:var(--acc);cursor:pointer;display:flex;align-items:center;justify-content:center}
-  .flip button:active{transform:scale(.93)}
+  .flip button{width:36px;height:36px;border-radius:12px;background:#1B2A45;border:1px solid var(--line2);color:var(--acc);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(2,6,16,.45)}
+  #flipIcon{display:flex;will-change:transform}
   .meta{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);padding:11px 2px 3px;font-variant-numeric:tabular-nums}
   .meta b{color:var(--txt)}
-  .bigbtn{width:100%;margin-top:12px;background:linear-gradient(135deg,#5B9BFF,var(--acc2));color:#FFFFFF;border:0;font-family:inherit;font-weight:800;font-size:16px;border-radius:15px;padding:15px 0;cursor:pointer}
+  .bigbtn{width:100%;margin-top:12px;background:linear-gradient(135deg,var(--acc-hi),var(--acc-lo));color:#fff;border:0;font-weight:800;font-size:16px;border-radius:15px;padding:15px 12px;cursor:pointer;box-shadow:0 10px 26px rgba(47,107,221,.35);display:flex;align-items:center;justify-content:center;gap:9px;will-change:transform}
   .bigbtn:active{transform:scale(.985)}
-  .bigbtn:disabled{background:#1B2A45;color:var(--dim);cursor:default}
-  .ghostbtn{width:100%;margin-top:9px;background:transparent;color:var(--acc);border:1px solid var(--line2);font-family:inherit;font-weight:800;font-size:13.5px;border-radius:13px;padding:11px 0;cursor:pointer}
-  .stats{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%;max-width:460px;margin-top:12px}
-  .stat{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:11px 13px}
+  .bigbtn:disabled{background:#1B2A45;color:var(--dim);cursor:default;box-shadow:none}
+  .ghostbtn{width:100%;margin-top:9px;background:transparent;color:var(--acc);border:1px solid var(--line2);font-weight:800;font-size:13.5px;border-radius:13px;padding:11px 0;cursor:pointer}
+  .ghostbtn:active{transform:scale(.99)}
+  #swapSpin{width:22px;height:22px;display:none;flex:none}
+  #swapSpin.on{display:block}
+  .cssdots{display:none;gap:4px;align-items:center}
+  .cssdots.on{display:inline-flex}
+  .cssdots i{width:6px;height:6px;border-radius:50%;background:#BFD6FF;animation:blk 0.9s infinite}
+  .cssdots i:nth-child(2){animation-delay:.15s}.cssdots i:nth-child(3){animation-delay:.3s}
+  #swapOverlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(6,11,21,.5);backdrop-filter:blur(2.5px);-webkit-backdrop-filter:blur(2.5px);border-radius:22px;z-index:5;pointer-events:none}
+  #swapOverlay.on{display:flex}
+  #swapCheck{width:118px;height:118px}
+
+  /* ---------- chart ---------- */
+  .chart-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px}
+  #chartReadout{font-size:11.5px;color:var(--mut);font-variant-numeric:tabular-nums;text-align:right;line-height:1.55}
+  #chartReadout b{color:var(--txt)}
+  #chartWrap{position:relative;width:100%;height:196px;border-radius:14px;background:rgba(8,14,25,.6);border:1px solid rgba(28,42,66,.8);overflow:hidden}
+  #chartStage{position:absolute;inset:0}
+  #chartFallback{position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:var(--dim);font-size:12.5px;padding:0 20px;text-align:center}
+  .chart-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:11px}
+  .chart-note{font-size:11px;color:var(--dim);line-height:1.5}
+  .mini-btn{flex:none;background:rgba(47,107,221,.14);border:1px solid rgba(92,155,255,.5);color:#BFD6FF;font-weight:800;font-size:12px;border-radius:10px;padding:8px 13px;cursor:pointer}
+  .mini-btn:active{transform:scale(.97)}
+  .mini-btn:disabled{opacity:.45;cursor:default}
+  .legend{display:flex;gap:14px;font-size:11px;color:var(--mut);margin-top:9px}
+  .legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+
+  /* ---------- pool viz & stats ---------- */
+  #poolViz{width:100%;height:172px;display:flex;align-items:center;justify-content:center}
+  #poolViz svg{max-width:100%}
+  .pool-cap{font-size:11.5px;color:var(--dim);text-align:center;line-height:1.55}
+  .pool-cap b{color:var(--mut)}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .stat{background:var(--glass), var(--panel);border:1px solid rgba(64,96,152,.4);border-radius:17px;padding:13px 15px;box-shadow:var(--shadow)}
   .stat label{font-size:10.5px;color:var(--dim);font-weight:700;letter-spacing:.6px;text-transform:uppercase}
-  .stat div{font-size:16.5px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums}
+  .stat div{font-size:17px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums}
   .stat small{font-size:11px;color:var(--mut);font-weight:600}
-  footer{width:100%;max-width:460px;color:var(--dim);font-size:11.5px;line-height:1.65;padding:16px 2px 0;text-align:center}
+
+  /* ---------- keeper log ---------- */
+  #keeperLog{margin-top:11px;max-height:158px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;padding-right:4px}
+  .klog-line{font-size:12px;color:var(--mut);line-height:1.55;padding:5px 9px;border-radius:8px;background:rgba(16,26,44,.45);font-variant-numeric:tabular-nums}
+  .klog-line .kt{color:var(--dim);font-size:11px;margin-right:7px}
+  .klog-line b{color:var(--good)}
+  .klog-line.swap b{color:var(--acc-hi)}
+  .klog-empty{font-size:12px;color:var(--dim);padding:4px 2px}
+
+  footer{width:100%;max-width:1120px;margin:22px auto 0;padding:0 20px 34px;color:var(--dim);font-size:11.5px;line-height:1.7;text-align:center}
   footer b{color:var(--mut)}
-  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:#132138;border:1px solid var(--line2);color:var(--txt);font-size:13px;font-weight:700;border-radius:12px;padding:11px 16px;opacity:0;pointer-events:none;transition:.25s;max-width:92vw;text-align:center;z-index:50}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:#132138;border:1px solid var(--line2);color:var(--txt);font-size:13px;font-weight:700;border-radius:12px;padding:11px 16px;opacity:0;pointer-events:none;transition:.25s;max-width:92vw;text-align:center;z-index:60;box-shadow:var(--shadow)}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .hide{display:none!important}
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  }
 </style>
 </head>
 <body>
 
-<header>
-  <div class="logo">
-    <span class="lmark"><svg viewBox="0 0 24 24" fill="none"><path d="M7 4v13.2c0 1 .8 1.8 1.8 1.8H19" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/></svg></span>
-    LiteSwap <span class="demotag">DEMO</span>
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="logo">
+      <span class="lmark"><svg viewBox="0 0 24 24" fill="none"><path d="M7 4v13.2c0 1 .8 1.8 1.8 1.8H19" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/></svg></span>
+      LiteSwap <span class="demotag">DEMO</span>
+    </div>
+    <div class="sp"></div>
+    <div class="netpill"><i></i>LiteForge · 4441</div>
+    <button class="cbtn press" id="connectBtn" onclick="connect()">Connect</button>
   </div>
-  <div class="sp"></div>
-  <div class="netpill"><i></i>LiteForge · 4441</div>
-  <button class="cbtn" id="connectBtn" onclick="connect()">Connect</button>
 </header>
 
-<div class="tagline">Testnet prices. <b>Mainnet parity.</b> The LiteForge DEX whose prices mirror the real LTC market — live.</div>
-
-<div class="card">
-  <div class="refbox">
-    <div class="refrow"><span>Mainnet reference · LTC/USDT (Kraken)</span><b class="big" id="refPrice">…</b></div>
-    <div class="refrow"><span>LiteSwap pool price · zkLTC</span><b id="poolPrice">…</b></div>
-    <div class="refrow"><span>Deviation</span><b id="devVal" class="dev-ok">…</b></div>
-    <div class="keeper"><i></i><span><b>Keeper ACTIVE</b> — pool is continuously re-aligned to the mainnet price. <span id="feedMode">Feed: live.</span></span></div>
-  </div>
-
-  <div class="tabs">
-    <button id="tabSwap" class="on" onclick="showTab('swap')">Swap</button>
-    <button id="tabLiq" onclick="showTab('liq')">Liquidity</button>
-  </div>
-
-  <!-- SWAP -->
-  <div id="paneSwap">
-    <div class="tbox">
-      <label>YOU PAY</label>
-      <div class="trow">
-        <input id="inAmt" type="text" inputmode="decimal" placeholder="0.0" oninput="onIn()">
-        <div class="tsel" onclick="flipDir()"><span class="tic" id="inIc" style="background:#345D9D">Ł</span><span id="inSym">zkLTC</span></div>
+<section class="hero">
+  <canvas id="bgParticles" aria-hidden="true"></canvas>
+  <div class="hero-in">
+    <div class="hero-copy">
+      <div class="hero-badge rise"><i></i>BROWSER SIMULATION · NO ON-CHAIN CONTRACTS</div>
+      <h1 class="rise">Testnet prices.<br><span class="grad">Mainnet parity.</span></h1>
+      <p class="hero-sub rise">The LiteForge DEX concept whose pool price <b>mirrors the real LTC market</b> — a keeper arbitrages the local pool back to the Kraken reference every few seconds, in the open, in your browser.</p>
+      <div class="hero-chips rise">
+        <span class="chip">Reference <b>Kraken LTC/USDT</b></span>
+        <span class="chip">AMM <b>x·y = k</b></span>
+        <span class="chip">Fee <b>0.3%</b></span>
+        <span class="chip">Keeper <b>auto-parity</b></span>
       </div>
-      <div class="bal"><span id="inBal">Balance: 100.00</span><button onclick="setMax()">MAX</button></div>
     </div>
-    <div class="flip"><button onclick="flipDir()" aria-label="Flip direction"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M7 4v13M7 17l-3-3M7 4l3 3M17 20V7M17 7l3 3M17 20l-3-3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" transform="rotate(90 12 12)"/></svg></button></div>
-    <div class="tbox">
-      <label>YOU RECEIVE</label>
-      <div class="trow">
-        <input id="outAmt" type="text" placeholder="0.0" readonly>
-        <div class="tsel" onclick="flipDir()"><span class="tic" id="outIc" style="background:#1E9E6A">$</span><span id="outSym">LUSD</span></div>
-      </div>
-      <div class="bal"><span id="outBal">Balance: 1,000.00</span><span id="rateLine">—</span></div>
+    <div class="coin-wrap rise" aria-hidden="true">
+      <canvas id="coinCanvas" width="300" height="300"></canvas>
+      <div class="coin-fallback" id="coinFallback"><span>Ł</span></div>
     </div>
-    <div class="meta"><span>Price impact</span><b id="impact">—</b></div>
-    <div class="meta"><span>Fee (0.3%)</span><b id="feeLine">—</b></div>
-    <button class="bigbtn" id="swapBtn" onclick="doSwap()">Swap</button>
-    <button class="ghostbtn" onclick="faucet()">+ Get test tokens (demo faucet)</button>
   </div>
+</section>
 
-  <!-- LIQUIDITY -->
-  <div id="paneLiq" class="hide">
-    <div class="tbox">
-      <label>DEPOSIT zkLTC</label>
-      <div class="trow">
-        <input id="liqA" type="text" inputmode="decimal" placeholder="0.0" oninput="onLiq()">
-        <div class="tsel"><span class="tic" style="background:#345D9D">Ł</span><span>zkLTC</span></div>
-      </div>
-      <div class="bal"><span id="liqABal">Balance: 100.00</span><span></span></div>
+<main class="layout">
+  <!-- ============ SWAP CARD ============ -->
+  <section class="card rise" id="swapCard">
+    <div class="refbox">
+      <div class="refrow"><span>Mainnet reference · LTC/USDT (Kraken)</span><b class="big" id="refPrice">…</b></div>
+      <div class="refrow"><span>LiteSwap pool price · zkLTC</span><b id="poolPrice">…</b></div>
+      <div class="refrow"><span>Deviation</span><b id="devVal" class="dev-ok">…</b></div>
+      <div class="keeper"><i></i><span><b>Keeper ACTIVE</b> — pool is continuously re-aligned to the mainnet price. <span id="feedMode">Feed: live.</span></span></div>
     </div>
-    <div style="height:9px"></div>
-    <div class="tbox">
-      <label>DEPOSIT LUSD (auto, at pool price)</label>
-      <div class="trow">
-        <input id="liqB" type="text" placeholder="0.0" readonly>
-        <div class="tsel"><span class="tic" style="background:#1E9E6A">$</span><span>LUSD</span></div>
-      </div>
-      <div class="bal"><span id="liqBBal">Balance: 1,000.00</span><span></span></div>
+
+    <div class="tabs">
+      <button id="tabSwap" class="on" onclick="showTab('swap')">Swap</button>
+      <button id="tabLiq" onclick="showTab('liq')">Liquidity</button>
     </div>
-    <div class="meta"><span>Your pool share after deposit</span><b id="shareLine">—</b></div>
-    <button class="bigbtn" onclick="doAddLiq()">Add liquidity</button>
-    <button class="ghostbtn" onclick="faucet()">+ Get test tokens (demo faucet)</button>
+
+    <!-- SWAP -->
+    <div id="paneSwap">
+      <div class="tbox">
+        <label>YOU PAY</label>
+        <div class="trow">
+          <input id="inAmt" type="text" inputmode="decimal" placeholder="0.0" oninput="onIn()" aria-label="Amount you pay">
+          <div class="tsel" onclick="flipDir()" role="button" aria-label="Flip direction"><span class="tic" id="inIc" style="background:#345D9D">Ł</span><span id="inSym">zkLTC</span></div>
+        </div>
+        <div class="bal"><span id="inBal">Balance: 100.00</span><button onclick="setMax()">MAX</button></div>
+      </div>
+      <div class="flip"><button id="flipBtn" onclick="flipDir()" aria-label="Flip direction"><span id="flipIcon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M7 4v13M7 17l-3-3M7 4l3 3M17 20V7M17 7l3 3M17 20l-3-3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" transform="rotate(90 12 12)"/></svg></span></button></div>
+      <div class="tbox">
+        <label>YOU RECEIVE</label>
+        <div class="trow">
+          <input id="outAmt" type="text" placeholder="0.0" readonly aria-label="Amount you receive">
+          <div class="tsel" onclick="flipDir()" role="button" aria-label="Flip direction"><span class="tic" id="outIc" style="background:#1E9E6A">$</span><span id="outSym">LUSD</span></div>
+        </div>
+        <div class="bal"><span id="outBal">Balance: 1,000.00</span><span id="rateLine">—</span></div>
+      </div>
+      <div class="meta"><span>Price impact</span><b id="impact">—</b></div>
+      <div class="meta"><span>Fee (0.3%)</span><b id="feeLine">—</b></div>
+      <button class="bigbtn press" id="swapBtn" onclick="doSwap()"><span id="swapBtnTxt">Swap</span><span id="swapSpin" aria-hidden="true"></span><span class="cssdots" id="swapDots" aria-hidden="true"><i></i><i></i><i></i></span></button>
+      <button class="ghostbtn press" onclick="faucet()">+ Get test tokens (demo faucet)</button>
+    </div>
+
+    <!-- LIQUIDITY -->
+    <div id="paneLiq" class="hide">
+      <div class="tbox">
+        <label>DEPOSIT zkLTC</label>
+        <div class="trow">
+          <input id="liqA" type="text" inputmode="decimal" placeholder="0.0" oninput="onLiq()" aria-label="Deposit zkLTC amount">
+          <div class="tsel"><span class="tic" style="background:#345D9D">Ł</span><span>zkLTC</span></div>
+        </div>
+        <div class="bal"><span id="liqABal">Balance: 100.00</span><span></span></div>
+      </div>
+      <div style="height:9px"></div>
+      <div class="tbox">
+        <label>DEPOSIT LUSD (auto, at pool price)</label>
+        <div class="trow">
+          <input id="liqB" type="text" placeholder="0.0" readonly aria-label="Deposit LUSD amount">
+          <div class="tsel"><span class="tic" style="background:#1E9E6A">$</span><span>LUSD</span></div>
+        </div>
+        <div class="bal"><span id="liqBBal">Balance: 1,000.00</span><span></span></div>
+      </div>
+      <div class="meta"><span>Your pool share after deposit</span><b id="shareLine">—</b></div>
+      <button class="bigbtn press" onclick="doAddLiq()">Add liquidity</button>
+      <button class="ghostbtn press" onclick="faucet()">+ Get test tokens (demo faucet)</button>
+    </div>
+
+    <div id="swapOverlay" aria-hidden="true"><div id="swapCheck"></div></div>
+  </section>
+
+  <div class="side-col">
+    <!-- ============ CHART ============ -->
+    <section class="card rise">
+      <div class="chart-head">
+        <h3><span class="dot"></span>Pool vs mainnet · live</h3>
+        <div id="chartReadout">Drag the crosshair to inspect a point</div>
+      </div>
+      <div id="chartWrap">
+        <div id="chartStage"></div>
+        <div id="chartFallback">Live chart needs its graphics library — the swap simulation above still works fully.</div>
+      </div>
+      <div class="legend">
+        <span><i style="background:#4C8DFF"></i>Pool price</span>
+        <span><i style="background:#8A94A6"></i>Kraken reference</span>
+      </div>
+      <div class="chart-foot">
+        <div class="chart-note">Plots the local simulated pool against the live Kraken reference. Drag the handle on the chart.</div>
+        <button class="mini-btn press" id="exportGifBtn">Export chart GIF</button>
+      </div>
+    </section>
+
+    <!-- ============ POOL VIZ ============ -->
+    <section class="card rise">
+      <h3><span class="dot"></span>The pool</h3>
+      <div id="poolViz" aria-hidden="true"></div>
+      <div class="pool-cap"><b>zkLTC ⇄ LUSD</b> · constant product <b>x·y = k</b> · the pair pulses on every swap</div>
+    </section>
+
+    <!-- ============ STATS ============ -->
+    <div class="stats rise">
+      <div class="stat"><label>Pool reserves</label><div id="stRes">…</div><small>zkLTC / LUSD in the pair</small></div>
+      <div class="stat"><label>Total value (at ref price)</label><div id="stTvl">…</div><small>both sides of the pool</small></div>
+      <div class="stat"><label>Swaps executed</label><div id="stSwaps">0</div><small>this demo session</small></div>
+      <div class="stat"><label>Keeper corrections</label><div id="stCorr">0</div><small>re-alignments to mainnet</small></div>
+    </div>
+
+    <!-- ============ KEEPER LOG ============ -->
+    <section class="card rise">
+      <h3><span class="dot"></span>Keeper log</h3>
+      <div id="keeperLog"><div class="klog-empty">Keeper is watching the pool — corrections will appear here.</div></div>
+    </section>
   </div>
-</div>
-
-<div class="stats">
-  <div class="stat"><label>Pool reserves</label><div id="stRes">…</div><small>zkLTC / LUSD in the pair</small></div>
-  <div class="stat"><label>Total value (at ref price)</label><div id="stTvl">…</div><small>both sides of the pool</small></div>
-  <div class="stat"><label>Swaps executed</label><div id="stSwaps">0</div><small>this demo session</small></div>
-  <div class="stat"><label>Keeper corrections</label><div id="stCorr">0</div><small>re-alignments to mainnet</small></div>
-</div>
+</main>
 
 <footer>
-  <b>LiteSwap — concept demo.</b> Runs fully in your browser: real AMM maths (x·y=k, 0.3% fee) against a simulated local pool; the reference price is the live mainnet LTC/USDT rate. No contracts are deployed yet and no wallet is ever asked for a signature. On LiteForge, the deployed version reads the same reference and the keeper keeps the on-chain pool at parity.
+  <b>LiteSwap — concept demo.</b> This page is a <b>browser-local simulation</b>: real AMM maths (x·y=k, 0.3% fee) run against a simulated pool held in this tab, while the reference price is the live mainnet LTC/USDT rate from Kraken. <b>No contracts are deployed on LiteForge</b>, no real funds move, all balances and trades here are simulated, and no wallet is ever asked for a signature. In the deployed version, the same reference feeds an on-chain pool on LiteForge and the keeper keeps it at parity.
 </footer>
 
 <div class="toast" id="toast"></div>
 
 <script>
 "use strict";
-// ---------- state ----------
+// ================= LiteSwap core simulation (no library dependencies) =================
+function el(id){ return document.getElementById(id); }
 var ref = 43.92;              // mainnet LTC/USDT reference (fallback start)
 var feedLive = false;
-var R = { zk: 5000, usd: 0 }; // pool reserves; usd seeded from ref at init
+var R = { zk: 5000, usd: 0 }; // pool reserves; usd seeded from ref below
 var bal = { zk: 100, usd: 1000 };
 var lpUser = 0, lpTotal = 0;
 var swaps = 0, corrections = 0;
 var dir = 1;                  // 1 = pay zkLTC, receive LUSD ; -1 = reverse
 var FEE = 0.003;
+var swapBusy = false;
+
+R.usd = R.zk * ref;           // seed LUSD side from the fallback ref so first paint is sane
 
 function fmt(n, d){ return n.toLocaleString('en-US',{minimumFractionDigits:d==null?2:d, maximumFractionDigits:d==null?2:d}); }
 function poolPrice(){ return R.usd / R.zk; }                 // LUSD per zkLTC
 function amountOut(ain, rin, rout){ var a = ain*(1-FEE); return (a*rout)/(rin+a); }
-function toast(msg){ var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(function(){t.classList.remove('show')},2600); }
+function toast(msg){ var t=el('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(function(){t.classList.remove('show')},2600); }
+
+// ---------- enhancement hooks (filled in by the enhancement layer, all optional) ----------
+window.LS_HOOKS = window.LS_HOOKS || {};
+function hook(name, arg){ var h = window.LS_HOOKS[name]; if(typeof h === 'function'){ try{ h(arg); }catch(e){} } }
+
+// ---------- Ola glide layer: every displayed number eases, never jump-cuts ----------
+var HAS_OLA = (typeof Ola !== 'undefined');
+function mkOla(v){ return HAS_OLA ? Ola({v:v}, 650) : null; }
+var glides = [];
+function glideText(ola, element, fmtFn){
+  if(!ola){ return function(v){ element.textContent = fmtFn(v); }; }
+  var last = null;
+  glides.push({ o: ola, step: function(){ var s = fmtFn(ola.v); if(s !== last){ last = s; element.textContent = s; } } });
+  return function(v){ ola.v = v; };
+}
+var oRef = mkOla(ref), oPool = mkOla(poolPrice()), oBalIn = mkOla(bal.zk), oBalOut = mkOla(bal.usd),
+    oBalZk = mkOla(bal.zk), oBalUsd = mkOla(bal.usd), oTvl = mkOla(R.zk*ref + R.usd),
+    oSwaps = mkOla(0), oCorr = mkOla(0), oResZk = mkOla(R.zk), oResUsd = mkOla(R.usd), oDev = mkOla(0);
+var setRefTxt  = glideText(oRef,  el('refPrice'),  function(v){ return '$' + fmt(v); });
+var setPoolTxt = glideText(oPool, el('poolPrice'), function(v){ return '$' + fmt(v); });
+var setInBal   = glideText(oBalIn,  el('inBal'),   function(v){ return 'Balance: ' + fmt(v); });
+var setOutBal  = glideText(oBalOut, el('outBal'),  function(v){ return 'Balance: ' + fmt(v); });
+var setLiqABal = glideText(oBalZk,  el('liqABal'), function(v){ return 'Balance: ' + fmt(v); });
+var setLiqBBal = glideText(oBalUsd, el('liqBBal'),function(v){ return 'Balance: ' + fmt(v); });
+var setTvlTxt  = glideText(oTvl,  el('stTvl'),    function(v){ return '$' + fmt(v, 0); });
+var setSwapsTxt= glideText(oSwaps,el('stSwaps'),  function(v){ return String(Math.max(0, Math.round(v))); });
+var setCorrTxt = glideText(oCorr, el('stCorr'),   function(v){ return String(Math.max(0, Math.round(v))); });
+var setResTxt, setDevTxt;
+if(oResZk && oResUsd){
+  (function(){ var last = null;
+    glides.push({ o: oResZk, step: function(){ var s = fmt(oResZk.v,0) + ' / ' + fmt(oResUsd.v,0); if(s !== last){ last = s; el('stRes').textContent = s; } } });
+  })();
+  setResTxt = function(){ oResZk.v = R.zk; oResUsd.v = R.usd; };
+} else { setResTxt = function(){ el('stRes').textContent = fmt(R.zk,0) + ' / ' + fmt(R.usd,0); }; }
+if(oDev){
+  (function(){ var last = null;
+    glides.push({ o: oDev, step: function(){ var v = oDev.v; var s = (v>=0?'+':'') + v.toFixed(2) + '%'; if(s !== last){ last = s; var dv = el('devVal'); dv.textContent = s; dv.className = Math.abs(v) <= 0.5 ? 'dev-ok' : 'dev-warn'; } } });
+  })();
+  setDevTxt = function(v){ oDev.v = v; };
+} else { setDevTxt = function(v){ var dv = el('devVal'); dv.textContent = (v>=0?'+':'') + v.toFixed(2) + '%'; dv.className = Math.abs(v) <= 0.5 ? 'dev-ok' : 'dev-warn'; }; }
+if(glides.length){
+  (function glideTick(){ for(var i=0;i<glides.length;i++) glides[i].step(); requestAnimationFrame(glideTick); })();
+}
+
+// ---------- price history (feeds the chart + GIF export) ----------
+var priceHistory = [];
+function pushHist(){ priceHistory.push({ t: Date.now(), ref: ref, pool: poolPrice() }); if(priceHistory.length > 120) priceHistory.shift(); hook('onHistory'); }
+(function seedHist(){
+  var now = Date.now();
+  for(var i=0;i<26;i++){
+    var r = ref * (1 + Math.sin(i*0.7)*0.0009 + (Math.random()-0.5)*0.0006);
+    priceHistory.push({ t: now - (26-i)*2000, ref: r, pool: r * (1 + Math.sin(i*0.45+1)*0.0018) });
+  }
+})();
+window.LS = { history: priceHistory, fmt: fmt, getRef: function(){ return ref; }, getPool: poolPrice,
+              getDev: function(){ return (poolPrice()-ref)/ref*100; } };
+
+// ---------- keeper log ----------
+function logLine(html, cls){
+  var log = el('keeperLog'); if(!log) return;
+  var empty = log.querySelector('.klog-empty'); if(empty) empty.remove();
+  var d = document.createElement('div');
+  d.className = 'klog-line' + (cls ? ' ' + cls : '');
+  d.innerHTML = '<span class="kt">' + new Date().toTimeString().slice(0,8) + '</span>' + html;
+  log.insertBefore(d, log.firstChild);
+  while(log.children.length > 7) log.removeChild(log.lastChild);
+  hook('onLog', d);
+}
 
 // ---------- reference feed (Kraken public ticker, CORS-enabled) ----------
 function fetchRef(){
+  if(typeof fetch !== 'function'){ feedLive = false; render(); return; }
   fetch('https://api.kraken.com/0/public/Ticker?pair=LTCUSDT')
     .then(function(r){ return r.json(); })
     .then(function(j){
@@ -198,7 +445,7 @@ fetchRef(); setInterval(fetchRef, 15000);
 function keeper(){
   var p = poolPrice(), dev = (p - ref)/ref;
   if(Math.abs(dev) > 0.0025){
-    // arbitrageur trades against the pool to close ~60% of the gap
+    var devPct = dev * 100;
     if(dev > 0){ // zkLTC too expensive in pool -> sell zkLTC into pool
       var ain = R.zk * Math.min(0.12, Math.abs(dev)*1.4);
       var out = amountOut(ain, R.zk, R.usd);
@@ -209,10 +456,13 @@ function keeper(){
       R.usd += ain2; R.zk -= out2;
     }
     corrections++;
+    logLine('Keeper arbitraged <b>' + (devPct>=0?'−':'+') + Math.abs(devPct).toFixed(2) + '%</b> deviation → parity restored');
+    pushHist();
   }
   render();
 }
 setInterval(keeper, 4000);
+setInterval(pushHist, 2000);
 
 // ---------- UI ----------
 function sym(side){ // side: 'in' | 'out'
@@ -220,71 +470,82 @@ function sym(side){ // side: 'in' | 'out'
   return isZk ? {s:'zkLTC', bg:'#345D9D', g:'Ł', key:'zk'} : {s:'LUSD', bg:'#1E9E6A', g:'$', key:'usd'};
 }
 function render(){
-  document.getElementById('refPrice').textContent = '$' + fmt(ref);
-  document.getElementById('poolPrice').textContent = '$' + fmt(poolPrice());
-  var dev = (poolPrice()-ref)/ref*100;
-  var dv = document.getElementById('devVal');
-  dv.textContent = (dev>=0?'+':'') + dev.toFixed(2) + '%';
-  dv.className = Math.abs(dev) <= 0.5 ? 'dev-ok' : 'dev-warn';
-  document.getElementById('feedMode').textContent = feedLive ? 'Feed: live.' : 'Feed: offline — simulated walk.';
+  setRefTxt(ref);
+  setPoolTxt(poolPrice());
+  setDevTxt((poolPrice()-ref)/ref*100);
+  el('feedMode').textContent = feedLive ? 'Feed: live.' : 'Feed: offline — simulated walk.';
   var si = sym('in'), so = sym('out');
-  document.getElementById('inSym').textContent = si.s;
-  document.getElementById('outSym').textContent = so.s;
-  var ii = document.getElementById('inIc'), oi = document.getElementById('outIc');
+  el('inSym').textContent = si.s;
+  el('outSym').textContent = so.s;
+  var ii = el('inIc'), oi = el('outIc');
   ii.style.background = si.bg; ii.textContent = si.g;
   oi.style.background = so.bg; oi.textContent = so.g;
-  document.getElementById('inBal').textContent = 'Balance: ' + fmt(bal[si.key]);
-  document.getElementById('outBal').textContent = 'Balance: ' + fmt(bal[so.key]);
-  document.getElementById('liqABal').textContent = 'Balance: ' + fmt(bal.zk);
-  document.getElementById('liqBBal').textContent = 'Balance: ' + fmt(bal.usd);
-  document.getElementById('rateLine').textContent = dir===1 ? ('1 zkLTC ≈ $' + fmt(poolPrice())) : ('1 LUSD ≈ ' + fmt(1/poolPrice(),4) + ' zkLTC');
-  document.getElementById('stRes').textContent = fmt(R.zk,0) + ' / ' + fmt(R.usd,0);
-  document.getElementById('stTvl').textContent = '$' + fmt(R.zk*ref + R.usd, 0);
-  document.getElementById('stSwaps').textContent = swaps;
-  document.getElementById('stCorr').textContent = corrections;
+  setInBal(bal[si.key]);
+  setOutBal(bal[so.key]);
+  setLiqABal(bal.zk);
+  setLiqBBal(bal.usd);
+  el('rateLine').textContent = dir===1 ? ('1 zkLTC ≈ $' + fmt(poolPrice())) : ('1 LUSD ≈ ' + fmt(1/poolPrice(),4) + ' zkLTC');
+  setResTxt();
+  setTvlTxt(R.zk*ref + R.usd);
+  setSwapsTxt(swaps);
+  setCorrTxt(corrections);
   onIn(); onLiq();
 }
-function parseAmt(id){ var v = parseFloat((document.getElementById(id).value||'').replace(',','.')); return isFinite(v) && v>0 ? v : 0; }
+function parseAmt(id){ var v = parseFloat((el(id).value||'').replace(',','.')); return isFinite(v) && v>0 ? v : 0; }
 function onIn(){
   var ain = parseAmt('inAmt');
   var si = sym('in');
   var rin = si.key==='zk' ? R.zk : R.usd, rout = si.key==='zk' ? R.usd : R.zk;
   var out = ain>0 ? amountOut(ain, rin, rout) : 0;
-  document.getElementById('outAmt').value = ain>0 ? fmt(out, out<1?4:2) : '';
+  el('outAmt').value = ain>0 ? fmt(out, out<1?4:2) : '';
   var mid = si.key==='zk' ? ain*poolPrice() : ain/poolPrice();
-  var imp = mid>0 ? Math.max(0,(1 - (si.key==='zk'? out : out) / (mid||1)) * 100) : 0;
-  document.getElementById('impact').textContent = ain>0 ? imp.toFixed(2)+'%' : '—';
-  document.getElementById('feeLine').textContent = ain>0 ? fmt(ain*FEE,4)+' '+si.s : '—';
-  var btn = document.getElementById('swapBtn');
-  if(ain<=0){ btn.disabled = true; btn.textContent = 'Enter an amount'; }
-  else if(ain > bal[si.key]){ btn.disabled = true; btn.textContent = 'Insufficient ' + si.s + ' balance'; }
-  else { btn.disabled = false; btn.textContent = 'Swap'; }
+  var imp = mid>0 ? Math.max(0,(1 - out / (mid||1)) * 100) : 0;
+  el('impact').textContent = ain>0 ? imp.toFixed(2)+'%' : '—';
+  el('feeLine').textContent = ain>0 ? fmt(ain*FEE,4)+' '+si.s : '—';
+  var btn = el('swapBtn'), bt = el('swapBtnTxt');
+  if(swapBusy){ btn.disabled = true; bt.textContent = 'Swapping'; }
+  else if(ain<=0){ btn.disabled = true; bt.textContent = 'Enter an amount'; }
+  else if(ain > bal[si.key]){ btn.disabled = true; bt.textContent = 'Insufficient ' + si.s + ' balance'; }
+  else { btn.disabled = false; bt.textContent = 'Swap'; }
 }
 function onLiq(){
   var a = parseAmt('liqA');
-  document.getElementById('liqB').value = a>0 ? fmt(a*poolPrice()) : '';
+  el('liqB').value = a>0 ? fmt(a*poolPrice()) : '';
   var share = a>0 ? (a/(R.zk+a))*100 : 0;
-  document.getElementById('shareLine').textContent = a>0 ? share.toFixed(2)+'%' : '—';
+  el('shareLine').textContent = a>0 ? share.toFixed(2)+'%' : '—';
 }
-function setMax(){ var si = sym('in'); document.getElementById('inAmt').value = bal[si.key]; onIn(); }
-function flipDir(){ dir *= -1; document.getElementById('inAmt').value=''; render(); }
+function setMax(){ var si = sym('in'); el('inAmt').value = bal[si.key]; onIn(); }
+function flipDir(){ dir *= -1; el('inAmt').value=''; render(); hook('onFlip'); }
 function showTab(t){
-  document.getElementById('tabSwap').className = t==='swap' ? 'on' : '';
-  document.getElementById('tabLiq').className = t==='liq' ? 'on' : '';
-  document.getElementById('paneSwap').className = t==='swap' ? '' : 'hide';
-  document.getElementById('paneLiq').className = t==='liq' ? '' : 'hide';
+  el('tabSwap').className = t==='swap' ? 'on' : '';
+  el('tabLiq').className = t==='liq' ? 'on' : '';
+  el('paneSwap').className = t==='swap' ? '' : 'hide';
+  el('paneLiq').className = t==='liq' ? '' : 'hide';
+  hook('onTab', t==='swap' ? el('paneSwap') : el('paneLiq'));
 }
 function doSwap(){
+  if(swapBusy) return;
   var ain = parseAmt('inAmt'), si = sym('in'), so = sym('out');
   if(ain<=0 || ain>bal[si.key]) return;
-  var rin = si.key==='zk' ? R.zk : R.usd, rout = si.key==='zk' ? R.usd : R.zk;
-  var out = amountOut(ain, rin, rout);
-  if(si.key==='zk'){ R.zk += ain; R.usd -= out; } else { R.usd += ain; R.zk -= out; }
-  bal[si.key] -= ain; bal[so.key] += out;
-  swaps++;
-  document.getElementById('inAmt').value = '';
-  toast('Swapped ' + fmt(ain) + ' ' + si.s + ' → ' + fmt(out, out<1?4:2) + ' ' + so.s + ' · demo tx confirmed');
-  render();
+  swapBusy = true;
+  el('swapDots').classList.add('on');
+  onIn();
+  hook('onSwapStart');
+  setTimeout(function(){
+    var rin = si.key==='zk' ? R.zk : R.usd, rout = si.key==='zk' ? R.usd : R.zk;
+    var out = amountOut(ain, rin, rout);
+    if(si.key==='zk'){ R.zk += ain; R.usd -= out; } else { R.usd += ain; R.zk -= out; }
+    bal[si.key] -= ain; bal[so.key] += out;
+    swaps++;
+    el('inAmt').value = '';
+    swapBusy = false;
+    el('swapDots').classList.remove('on');
+    toast('Swapped ' + fmt(ain) + ' ' + si.s + ' → ' + fmt(out, out<1?4:2) + ' ' + so.s + ' · demo tx confirmed');
+    logLine('Swap <b>' + fmt(ain) + ' ' + si.s + ' → ' + fmt(out, out<1?4:2) + ' ' + so.s + '</b>', 'swap');
+    render();
+    pushHist();
+    hook('onSwapDone', { ain: ain, out: out, si: si.s, so: so.s });
+  }, 480);
 }
 function doAddLiq(){
   var a = parseAmt('liqA'), b = a*poolPrice();
@@ -294,13 +555,14 @@ function doAddLiq(){
   bal.zk -= a; bal.usd -= b;
   var minted = lpTotal===0 ? Math.sqrt(a*b) : Math.min(a/R.zk, b/R.usd)*lpTotal;
   R.zk += a; R.usd += b; lpUser += minted; lpTotal += minted;
-  document.getElementById('liqA').value = '';
+  el('liqA').value = '';
   toast('Liquidity added · your pool share: ' + (lpUser/lpTotal*100).toFixed(2) + '%');
+  logLine('Liquidity added · pool share now <b>' + (lpUser/lpTotal*100).toFixed(2) + '%</b>', 'swap');
   render();
 }
 function faucet(){ bal.zk += 50; bal.usd += 500; toast('+50 zkLTC and +500 LUSD test tokens (demo)'); render(); }
 function connect(){
-  var b = document.getElementById('connectBtn');
+  var b = el('connectBtn');
   if(window.ethereum){
     window.ethereum.request({method:'eth_requestAccounts'}).then(function(a){
       if(a && a[0]){ b.textContent = a[0].slice(0,6)+'…'+a[0].slice(-4); toast('Wallet connected (demo still runs locally)'); }
@@ -310,9 +572,401 @@ function connect(){
     toast('Demo mode — no wallet extension found, showing a sample address');
   }
 }
-// seed LUSD side from the fallback ref so first paint is sane; re-seeded proportionally if ref moves a lot pre-interaction
-R.usd = R.zk * ref;
 render();
+pushHist();
+logLine('Keeper online — deviation checked every 4 s, history recording');
+</script>
+
+<script type="module">
+// ================= LiteSwap enhancement layer =================
+// Every integration is independently guarded: if a CDN library is missing,
+// that visual degrades and the core simulation above keeps working untouched.
+function el(id){ return document.getElementById(id); }
+var RM = false;
+try{ RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
+var H = window.LS_HOOKS = window.LS_HOOKS || {};
+function notify(msg){ if(typeof window.toast === 'function') window.toast(msg); }
+
+// ---- swap fx fan-out (Lottie, Motion spring, Two.js pulse all subscribe) ----
+var swapStartFns = [], swapDoneFns = [];
+H.onSwapStart = function(){ for(var i=0;i<swapStartFns.length;i++){ try{ swapStartFns[i](); }catch(e){} } };
+H.onSwapDone  = function(info){ for(var i=0;i<swapDoneFns.length;i++){ try{ swapDoneFns[i](info); }catch(e){} } };
+
+// ================= Proton particle field (hero backdrop) =================
+(function initParticles(){
+  var PN = window.Proton; if(!PN) return;
+  var canvas = el('bgParticles'); if(!canvas) return;
+  try{
+    var Ctor = PN.default || PN.Proton || (typeof PN === 'function' ? PN : null);
+    if(!Ctor || !PN.Emitter || !PN.CanvasRenderer) return;
+    var hero = canvas.parentElement;
+    function sizeCanvas(){ canvas.width = hero.clientWidth; canvas.height = hero.clientHeight; }
+    sizeCanvas();
+    var proton = new Ctor();
+    var emitter = new PN.Emitter();
+    emitter.rate = new PN.Rate(new PN.Span(2, 5), new PN.Span(0.4, 1.0));
+    emitter.addInitialise(new PN.Mass(1));
+    emitter.addInitialise(new PN.Radius(new PN.Span(0.8, 2.6)));
+    emitter.addInitialise(new PN.Life(new PN.Span(3.5, 7)));
+    emitter.addInitialise(new PN.Velocity(new PN.Span(6, 20), new PN.Span(-100, -80), 'polar'));
+    var zone = new PN.RectZone(0, Math.max(0, canvas.height - 6), canvas.width, 6);
+    emitter.addInitialise(new PN.Position(zone));
+    emitter.addBehaviour(new PN.Alpha(0.12, 0.7));
+    emitter.addBehaviour(new PN.Color(['#5B9BFF', '#4C8DFF', '#9CC2FF', '#2F6BDD', '#D7E6FF']));
+    if(PN.RandomDrift) emitter.addBehaviour(new PN.RandomDrift(8, 8, 0.7));
+    emitter.emit();
+    proton.addEmitter(emitter);
+    proton.addRenderer(new PN.CanvasRenderer(canvas));
+    if(RM){ proton.update(); return; }
+    (function loop(){ requestAnimationFrame(loop); if(!document.hidden) proton.update(); })();
+    var rto;
+    window.addEventListener('resize', function(){ clearTimeout(rto); rto = setTimeout(function(){ sizeCanvas(); try{ zone.y = Math.max(0, canvas.height - 6); zone.width = canvas.width; }catch(e){} }, 180); });
+  }catch(e){}
+})();
+
+// ================= Three.js rotating Ł coin =================
+import('three').then(function(THREE){
+  var canvas = el('coinCanvas');
+  if(!canvas) return;
+  try{
+    var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(canvas.clientWidth || 150, canvas.clientHeight || 150, false);
+    var scene = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+    camera.position.set(0, 0, 4.1);
+    scene.add(new THREE.HemisphereLight(0xbfd6ff, 0x0a1428, 1.15));
+    var key = new THREE.DirectionalLight(0xffffff, 2.4); key.position.set(2.5, 3, 4); scene.add(key);
+    var rim = new THREE.PointLight(0x4c8dff, 30, 24); rim.position.set(-3, -1.5, 2.5); scene.add(rim);
+    var coin = new THREE.Group();
+    var disc = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.08, 1.08, 0.17, 56),
+      new THREE.MeshStandardMaterial({ color: 0x2f6bdd, metalness: 0.72, roughness: 0.3 })
+    );
+    disc.rotation.x = Math.PI / 2;
+    coin.add(disc);
+    coin.add(new THREE.Mesh(
+      new THREE.TorusGeometry(1.08, 0.05, 14, 72),
+      new THREE.MeshStandardMaterial({ color: 0x5b9bff, metalness: 0.85, roughness: 0.25 })
+    ));
+    // Ł glyph: an extruded bold "L" plus its diagonal slash, hand-plotted
+    var shape = new THREE.Shape();
+    shape.moveTo(-0.30, 0.52); shape.lineTo(-0.07, 0.52); shape.lineTo(-0.07, -0.29);
+    shape.lineTo(0.37, -0.29); shape.lineTo(0.37, -0.52); shape.lineTo(-0.30, -0.52);
+    shape.closePath();
+    var glyphMat = new THREE.MeshStandardMaterial({ color: 0xdceaff, metalness: 0.9, roughness: 0.22 });
+    var glyph = new THREE.Mesh(
+      new THREE.ExtrudeGeometry(shape, { depth: 0.07, bevelEnabled: true, bevelThickness: 0.015, bevelSize: 0.015, bevelSegments: 2 }),
+      glyphMat
+    );
+    glyph.position.z = 0.085;
+    coin.add(glyph);
+    var slash = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.09, 0.07), glyphMat);
+    slash.position.set(0.02, 0.03, 0.125); slash.rotation.z = -0.52;
+    coin.add(slash);
+    coin.rotation.x = 0.16;
+    scene.add(coin);
+    renderer.render(scene, camera);
+    if(!RM){
+      (function anim(){
+        requestAnimationFrame(anim);
+        if(document.hidden) return;
+        coin.rotation.y += 0.011;
+        coin.rotation.x = 0.16 + Math.sin(Date.now() * 0.0006) * 0.07;
+        renderer.render(scene, camera);
+      })();
+    }
+  }catch(e){
+    var f = el('coinFallback'); if(f) f.style.display = 'flex';
+  }
+}).catch(function(){
+  var f = el('coinFallback'); if(f) f.style.display = 'flex';
+});
+
+// ================= Anime.js choreography =================
+import('animejs').then(function(m){
+  var animate = m.animate, stagger = m.stagger;
+  if(!animate) return;
+  H.onLog = function(node){ if(!RM){ try{ animate(node, { opacity: [0, 1], translateX: [-10, 0], duration: 380, ease: 'outQuad' }); }catch(e){} } };
+  H.onTab = function(pane){ if(!RM){ try{ animate(pane, { opacity: [0, 1], translateY: [8, 0], duration: 320, ease: 'outQuad' }); }catch(e){} } };
+  if(!RM){ try{ animate('.rise', { opacity: [0, 1], translateY: [18, 0], duration: 750, delay: stagger(75), ease: 'outExpo' }); }catch(e){} }
+}).catch(function(){});
+
+// ================= Motion springs =================
+import('motion').then(function(m){
+  var animate = m.animate;
+  if(!animate) return;
+  var rot = 0;
+  H.onFlip = function(){
+    rot += 180;
+    if(!RM){ try{ animate('#flipIcon', { rotate: rot }, { type: 'spring', stiffness: 260, damping: 19 }); }catch(e){} }
+  };
+  if(!RM){
+    document.querySelectorAll('.press').forEach(function(b){
+      b.addEventListener('pointerdown', function(){ try{ animate(b, { scale: 0.965 }, { duration: 0.12 }); }catch(e){} });
+      ['pointerup', 'pointerleave', 'pointercancel'].forEach(function(ev){
+        b.addEventListener(ev, function(){ try{ animate(b, { scale: 1 }, { type: 'spring', stiffness: 420, damping: 21 }); }catch(e){} });
+      });
+    });
+  }
+  swapDoneFns.push(function(){
+    if(!RM){ try{ animate('#swapCard', { scale: [1, 1.014, 1] }, { type: 'spring', stiffness: 300, damping: 15 }); }catch(e){} }
+  });
+}).catch(function(){});
+
+// ================= Lottie: hand-authored check + spinner =================
+var CHECK_JSON = {
+  v: '5.7.4', fr: 60, ip: 0, op: 46, w: 120, h: 120, nm: 'liteswap-check', ddd: 0, assets: [],
+  layers: [
+    { ddd: 0, ind: 1, ty: 4, nm: 'check', sr: 1,
+      ks: { o: { a: 0, k: 100 }, r: { a: 0, k: 0 }, p: { a: 0, k: [60, 60, 0] }, a: { a: 0, k: [60, 60, 0] }, s: { a: 0, k: [100, 100, 100] } },
+      ao: 0,
+      shapes: [{ ty: 'gr', nm: 'checkpath', it: [
+        { ty: 'sh', ks: { a: 0, k: { i: [[0, 0], [0, 0], [0, 0]], o: [[0, 0], [0, 0], [0, 0]], v: [[40, 63], [55, 79], [83, 44]], c: false } } },
+        { ty: 'st', c: { a: 0, k: [0.184, 0.816, 0.549, 1] }, o: { a: 0, k: 100 }, w: { a: 0, k: 7.5 }, lc: 2, lj: 2 },
+        { ty: 'tm', s: { a: 0, k: 0 }, e: { a: 1, k: [{ i: { x: [0.35], y: [1] }, o: { x: [0.65], y: [0] }, t: 20, s: [0] }, { t: 36, s: [100] }] }, o: { a: 0, k: 0 }, m: 1 },
+        { ty: 'tr', p: { a: 0, k: [60, 60] }, a: { a: 0, k: [60, 60] }, s: { a: 0, k: [100, 100] }, r: { a: 0, k: 0 }, o: { a: 0, k: 100 } }
+      ] }],
+      ip: 0, op: 46, st: 0, bm: 0 },
+    { ddd: 0, ind: 2, ty: 4, nm: 'ring', sr: 1,
+      ks: { o: { a: 0, k: 100 }, r: { a: 0, k: 0 }, p: { a: 0, k: [60, 60, 0] }, a: { a: 0, k: [60, 60, 0] }, s: { a: 0, k: [100, 100, 100] } },
+      ao: 0,
+      shapes: [{ ty: 'gr', nm: 'ring', it: [
+        { ty: 'el', p: { a: 0, k: [60, 60] }, s: { a: 0, k: [80, 80] } },
+        { ty: 'st', c: { a: 0, k: [0.184, 0.816, 0.549, 1] }, o: { a: 0, k: 100 }, w: { a: 0, k: 5.5 }, lc: 2, lj: 2 },
+        { ty: 'tm', s: { a: 0, k: 0 }, e: { a: 1, k: [{ i: { x: [0.35], y: [1] }, o: { x: [0.65], y: [0] }, t: 0, s: [0] }, { t: 22, s: [100] }] }, o: { a: 0, k: -90 }, m: 1 },
+        { ty: 'tr', p: { a: 0, k: [60, 60] }, a: { a: 0, k: [60, 60] }, s: { a: 0, k: [100, 100] }, r: { a: 0, k: 0 }, o: { a: 0, k: 100 } }
+      ] }],
+      ip: 0, op: 46, st: 0, bm: 0 }
+  ]
+};
+var SPIN_JSON = {
+  v: '5.7.4', fr: 60, ip: 0, op: 40, w: 36, h: 36, nm: 'liteswap-spin', ddd: 0, assets: [],
+  layers: [
+    { ddd: 0, ind: 1, ty: 4, nm: 'arc', sr: 1,
+      ks: { o: { a: 0, k: 100 }, r: { a: 1, k: [{ i: { x: [0.83], y: [0.83] }, o: { x: [0.17], y: [0.17] }, t: 0, s: [0] }, { t: 40, s: [360] }] }, p: { a: 0, k: [18, 18, 0] }, a: { a: 0, k: [18, 18, 0] }, s: { a: 0, k: [100, 100, 100] } },
+      ao: 0,
+      shapes: [{ ty: 'gr', nm: 'arc', it: [
+        { ty: 'el', p: { a: 0, k: [18, 18] }, s: { a: 0, k: [25, 25] } },
+        { ty: 'st', c: { a: 0, k: [0.75, 0.84, 1, 1] }, o: { a: 0, k: 100 }, w: { a: 0, k: 4 }, lc: 2, lj: 2 },
+        { ty: 'tm', s: { a: 0, k: 0 }, e: { a: 0, k: 62 }, o: { a: 0, k: 0 }, m: 1 },
+        { ty: 'tr', p: { a: 0, k: [18, 18] }, a: { a: 0, k: [18, 18] }, s: { a: 0, k: [100, 100] }, r: { a: 0, k: 0 }, o: { a: 0, k: 100 } }
+      ] }],
+      ip: 0, op: 40, st: 0, bm: 0 }
+  ]
+};
+(function initLottie(){
+  if(typeof lottie === 'undefined') return;
+  try{
+    var check = lottie.loadAnimation({ container: el('swapCheck'), renderer: 'svg', loop: false, autoplay: false, animationData: CHECK_JSON });
+    var spin = lottie.loadAnimation({ container: el('swapSpin'), renderer: 'svg', loop: true, autoplay: false, animationData: SPIN_JSON });
+    swapStartFns.push(function(){
+      el('swapDots').classList.remove('on');
+      el('swapSpin').classList.add('on');
+      try{ spin.goToAndPlay(0); }catch(e){}
+    });
+    swapDoneFns.push(function(){
+      try{ spin.stop(); }catch(e){}
+      el('swapSpin').classList.remove('on');
+      var ov = el('swapOverlay');
+      ov.classList.add('on');
+      try{ check.goToAndPlay(0); }catch(e){}
+      setTimeout(function(){ ov.classList.remove('on'); }, 1250);
+    });
+  }catch(e){}
+})();
+
+// ================= Two.js pool illustration =================
+(function initPoolViz(){
+  if(typeof Two === 'undefined') return;
+  var host = el('poolViz'); if(!host) return;
+  try{
+    var W = Math.min(host.clientWidth || 520, 560), Hh = 172;
+    var two = new Two({ type: Two.Types.svg, width: W, height: Hh }).appendTo(host);
+    var cx = W / 2, cy = Hh / 2, ORB = 58;
+    var ring = two.makeCircle(cx, cy, ORB);
+    ring.noFill(); ring.stroke = '#2A3D5F'; ring.linewidth = 1.4;
+    try{ ring.dashes = [3, 7]; }catch(e){}
+    var coreDot = two.makeCircle(cx, cy, 3.5); coreDot.fill = '#4C8DFF'; coreDot.noStroke();
+    var label = two.makeText('x·y = k', cx, cy + 24);
+    label.fill = '#5B6577'; label.size = 11.5; label.family = 'Plus Jakarta Sans'; label.weight = 700;
+    function makeCoin(glyph, fill, stroke){
+      var g = two.makeGroup();
+      var c = two.makeCircle(0, 0, 26); c.fill = fill; c.stroke = stroke; c.linewidth = 2;
+      var t = two.makeText(glyph, 0, 1); t.fill = '#FFFFFF'; t.size = 21; t.family = 'Plus Jakarta Sans'; t.weight = 800;
+      g.add(c, t);
+      return g;
+    }
+    var coinA = makeCoin('Ł', '#345D9D', '#5B9BFF');
+    var coinB = makeCoin('$', '#177A4C', '#2FD08C');
+    two.add(ring, coreDot, label, coinA, coinB);
+    var ang = 0.6, pulse = 0;
+    function place(){
+      var s = 1 + pulse * 0.22;
+      coinA.position.set(cx + Math.cos(ang) * ORB, cy + Math.sin(ang) * ORB);
+      coinB.position.set(cx + Math.cos(ang + Math.PI) * ORB, cy + Math.sin(ang + Math.PI) * ORB);
+      coinA.scale = s; coinB.scale = s;
+      ring.rotation = -ang * 0.35;
+    }
+    place(); two.update();
+    swapDoneFns.push(function(){ pulse = 1; });
+    if(!RM){
+      (function anim(){
+        requestAnimationFrame(anim);
+        if(document.hidden) return;
+        ang += 0.0038;
+        pulse = pulse > 0.001 ? pulse * 0.94 : 0;
+        place(); two.update();
+      })();
+    }
+  }catch(e){}
+})();
+
+// ================= Konva live chart with draggable crosshair =================
+(function initChart(){
+  var wrap = el('chartWrap');
+  if(typeof Konva === 'undefined'){ el('chartFallback').style.display = 'flex'; return; }
+  try{
+    var stage = new Konva.Stage({ container: 'chartStage', width: wrap.clientWidth, height: 196 });
+    var gridL = new Konva.Layer(), lineL = new Konva.Layer(), crossL = new Konva.Layer();
+    stage.add(gridL); stage.add(lineL); stage.add(crossL);
+    var PADL = 8, PADR = 8, PADT = 14, PADB = 16;
+    var crossIdx = -1;
+    var plot = { min: 0, max: 1, w: 10, h: 10 };
+    function scales(){
+      var hist = window.LS.history, mn = Infinity, mx = -Infinity, i;
+      for(i = 0; i < hist.length; i++){ mn = Math.min(mn, hist[i].ref, hist[i].pool); mx = Math.max(mx, hist[i].ref, hist[i].pool); }
+      if(!isFinite(mn)){ mn = 0; mx = 1; }
+      var pad = (mx - mn) * 0.18 + 0.02; mn -= pad; mx += pad;
+      plot.min = mn; plot.max = mx;
+      plot.w = stage.width() - PADL - PADR; plot.h = stage.height() - PADT - PADB;
+    }
+    function X(i, n){ return PADL + (n <= 1 ? plot.w / 2 : (i / (n - 1)) * plot.w); }
+    function Y(v){ return PADT + (1 - (v - plot.min) / (plot.max - plot.min)) * plot.h; }
+    var crossGroup = new Konva.Group({ draggable: true, dragBoundFunc: function(pos){ return { x: Math.max(PADL, Math.min(stage.width() - PADR, pos.x)), y: 0 }; } });
+    var crossLine = new Konva.Line({ points: [0, PADT - 4, 0, 190], stroke: '#9CC2FF', strokeWidth: 1, dash: [4, 4], opacity: 0.85 });
+    var dotRef = new Konva.Circle({ radius: 4.5, fill: '#0C1320', stroke: '#8A94A6', strokeWidth: 2.5 });
+    var dotPool = new Konva.Circle({ radius: 5, fill: '#0C1320', stroke: '#4C8DFF', strokeWidth: 2.5 });
+    var hit = new Konva.Rect({ x: -17, y: 0, width: 34, height: 196, fill: 'rgba(0,0,0,0)' });
+    crossGroup.add(crossLine); crossGroup.add(dotRef); crossGroup.add(dotPool); crossGroup.add(hit);
+    crossL.add(crossGroup);
+    function readout(i){
+      var hist = window.LS.history; if(!hist.length) return;
+      var p = hist[i], dev = (p.pool - p.ref) / p.ref * 100;
+      el('chartReadout').innerHTML = 'Pool <b>$' + window.LS.fmt(p.pool) + '</b> · Ref <b>$' + window.LS.fmt(p.ref) + '</b> · Dev <b>' + (dev >= 0 ? '+' : '') + dev.toFixed(2) + '%</b>';
+    }
+    function placeCross(){
+      var hist = window.LS.history; if(hist.length < 2) return;
+      var i = (crossIdx < 0 || crossIdx >= hist.length) ? hist.length - 1 : crossIdx;
+      crossGroup.x(X(i, hist.length)); crossGroup.y(0);
+      crossLine.points([0, PADT - 4, 0, stage.height() - PADB + 4]);
+      dotRef.position({ x: 0, y: Y(hist[i].ref) });
+      dotPool.position({ x: 0, y: Y(hist[i].pool) });
+      crossL.batchDraw();
+      readout(i);
+    }
+    function draw(){
+      var hist = window.LS.history; if(hist.length < 2) return;
+      scales();
+      gridL.destroyChildren();
+      var gI, i;
+      for(gI = 0; gI <= 3; gI++){
+        var v = plot.min + (plot.max - plot.min) * gI / 3, y = Y(v);
+        gridL.add(new Konva.Line({ points: [PADL, y, stage.width() - PADR, y], stroke: 'rgba(42,61,95,.5)', strokeWidth: 1 }));
+        gridL.add(new Konva.Text({ x: PADL + 2, y: y - 13, text: '$' + v.toFixed(2), fontSize: 9.5, fill: '#5B6577', fontFamily: 'Plus Jakarta Sans' }));
+      }
+      lineL.destroyChildren();
+      var refPts = [], poolPts = [];
+      for(i = 0; i < hist.length; i++){ refPts.push(X(i, hist.length), Y(hist[i].ref)); poolPts.push(X(i, hist.length), Y(hist[i].pool)); }
+      lineL.add(new Konva.Line({ points: poolPts.concat([X(hist.length - 1, hist.length), stage.height() - PADB, PADL, stage.height() - PADB]), fill: 'rgba(76,141,255,.10)', closed: true }));
+      lineL.add(new Konva.Line({ points: refPts, stroke: '#8A94A6', strokeWidth: 1.4, lineJoin: 'round' }));
+      lineL.add(new Konva.Line({ points: poolPts, stroke: '#4C8DFF', strokeWidth: 2.2, lineJoin: 'round', shadowColor: 'rgba(76,141,255,.55)', shadowBlur: 7 }));
+      gridL.batchDraw(); lineL.batchDraw();
+      placeCross();
+    }
+    crossGroup.on('dragmove', function(){
+      var hist = window.LS.history; if(hist.length < 2) return;
+      var i = Math.round((crossGroup.x() - PADL) / plot.w * (hist.length - 1));
+      i = Math.max(0, Math.min(hist.length - 1, i));
+      crossIdx = i;
+      crossGroup.x(X(i, hist.length));
+      dotRef.position({ x: 0, y: Y(hist[i].ref) });
+      dotPool.position({ x: 0, y: Y(hist[i].pool) });
+      crossL.batchDraw();
+      readout(i);
+    });
+    H.onHistory = draw;
+    draw();
+    var rto;
+    window.addEventListener('resize', function(){ clearTimeout(rto); rto = setTimeout(function(){ stage.width(wrap.clientWidth); draw(); }, 160); });
+  }catch(e){
+    el('chartFallback').style.display = 'flex';
+  }
+})();
+
+// ================= gifenc: export the chart as an animated GIF =================
+el('exportGifBtn').addEventListener('click', function(){
+  var btn = this, old = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Rendering…';
+  import('gifenc').then(function(g){
+    var hist = window.LS.history.slice();
+    if(hist.length < 4) throw new Error('not enough history');
+    var W = 520, Hh = 300, cv = document.createElement('canvas');
+    cv.width = W; cv.height = Hh;
+    var ctx = cv.getContext('2d');
+    var mn = Infinity, mx = -Infinity, i;
+    for(i = 0; i < hist.length; i++){ mn = Math.min(mn, hist[i].ref, hist[i].pool); mx = Math.max(mx, hist[i].ref, hist[i].pool); }
+    var pad = (mx - mn) * 0.18 + 0.02; mn -= pad; mx += pad;
+    var PL = 46, PR = 14, PT = 54, PB = 26, pw = W - PL - PR, ph = Hh - PT - PB;
+    function X(i){ return PL + (hist.length <= 1 ? pw / 2 : i / (hist.length - 1) * pw); }
+    function Y(v){ return PT + (1 - (v - mn) / (mx - mn)) * ph; }
+    var gif = g.GIFEncoder(), FRAMES = 22, f;
+    for(f = 0; f < FRAMES; f++){
+      ctx.fillStyle = '#0C1320'; ctx.fillRect(0, 0, W, Hh);
+      ctx.strokeStyle = 'rgba(42,61,95,.65)'; ctx.lineWidth = 1;
+      ctx.font = '10px "Plus Jakarta Sans", sans-serif';
+      for(var gi = 0; gi <= 3; gi++){
+        var v = mn + (mx - mn) * gi / 3, y = Y(v);
+        ctx.beginPath(); ctx.moveTo(PL, y); ctx.lineTo(W - PR, y); ctx.stroke();
+        ctx.fillStyle = '#5B6577'; ctx.fillText('$' + v.toFixed(2), 6, y + 3);
+      }
+      ctx.fillStyle = '#EDF1F5'; ctx.font = '800 15px "Plus Jakarta Sans", sans-serif';
+      ctx.fillText('LiteSwap — pool vs Kraken reference', PL, 24);
+      ctx.fillStyle = '#8A94A6'; ctx.font = '11px "Plus Jakarta Sans", sans-serif';
+      ctx.fillText('Simulated local pool · LiteForge mainnet-parity keeper demo', PL, 40);
+      var n = Math.max(2, Math.ceil(hist.length * (f + 1) / FRAMES)), j;
+      ctx.beginPath();
+      for(j = 0; j < n; j++){ if(j === 0) ctx.moveTo(X(j), Y(hist[j].ref)); else ctx.lineTo(X(j), Y(hist[j].ref)); }
+      ctx.strokeStyle = '#8A94A6'; ctx.lineWidth = 1.4; ctx.stroke();
+      ctx.beginPath();
+      for(j = 0; j < n; j++){ if(j === 0) ctx.moveTo(X(j), Y(hist[j].pool)); else ctx.lineTo(X(j), Y(hist[j].pool)); }
+      ctx.strokeStyle = '#4C8DFF'; ctx.lineWidth = 2.4; ctx.stroke();
+      ctx.beginPath(); ctx.arc(X(n - 1), Y(hist[n - 1].pool), 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#9CC2FF'; ctx.fill();
+      ctx.fillStyle = '#4C8DFF'; ctx.fillRect(PL, Hh - 14, 14, 3);
+      ctx.fillStyle = '#8A94A6'; ctx.font = '10px "Plus Jakarta Sans", sans-serif';
+      ctx.fillText('Pool', PL + 19, Hh - 10);
+      ctx.fillRect(PL + 58, Hh - 14, 14, 3);
+      ctx.fillText('Reference', PL + 77, Hh - 10);
+      var img = ctx.getImageData(0, 0, W, Hh);
+      var pal = g.quantize(img.data, 256);
+      var idx = g.applyPalette(img.data, pal);
+      gif.writeFrame(idx, W, Hh, { palette: pal, delay: 90 });
+    }
+    gif.finish();
+    var blob = new Blob([gif.bytes()], { type: 'image/gif' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'liteswap-chart.gif';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+    notify('Chart GIF exported');
+    btn.disabled = false; btn.textContent = old;
+  }).catch(function(){
+    btn.disabled = false; btn.textContent = old;
+    notify('GIF export unavailable — encoder library or history not ready');
+  });
+});
 </script>
 </body>
 </html>
